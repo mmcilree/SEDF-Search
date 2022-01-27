@@ -3,23 +3,58 @@ import json
 from os import listdir, system
 
 PARAM_PATH = "./gap/groups"
-OUTPUT_PATH = "./essence/conjure-output"
+CONJURE_OUTPUT_PATH = "./conjure-output"
+JSON_FILE_OUTPUT = "./known_osedfs.json"
+
 def all_models():
     files = listdir(PARAM_PATH)
     for f in files:
         if f.endswith(".param"):
-            system("conjure solve essence/edfimage.essence {0}/{1} --output-format=json --number-of-solutions=all --smart-filenames ".format(PARAM_PATH, f))
+            system("timeout 30m conjure solve essence/edfimage.essence {0}/{1} --output-format=json --number-of-solutions=all --smart-filenames ".format(PARAM_PATH, f))
 
 def one_model(modelpath):
-    system("conjure solve essence/edfimage.essence {0} --output-format=json --number-of-solutions=all --smart-filenames ".format(modelpath))
+    system("timeout 30m conjure solve essence/edfimage.essence {0} --output-format=json --number-of-solutions=all --smart-filenames ".format(modelpath))
+
 def clean_output():
-    files = listdir(PARAM_PATH)
-    json.load()
+    """
+        Read all of the conjure json output files, extract the important bits 
+        and store in a single file
+    """
+    files = listdir(CONJURE_OUTPUT_PATH)
+    outputfile = open(JSON_FILE_OUTPUT, "w+")
+    output = []
+    for filepath in files:
+        if filepath.endswith(".json"):
+            metadata = filepath.split("_")
+            f = open(CONJURE_OUTPUT_PATH + "/" + filepath, "r")
+            data = json.load(f)
+            f.close()
+            osedf = [[x for x in s.values()] for s in data["edf"].values()]
+            overgroup = [int(metadata[1]), int(metadata[2])]
+            setsize = int(metadata[3])
+            numsets = int(metadata[4])
+            dups = int(metadata[5].split("-")[0])
+            record = {
+                "osedf" : osedf,
+                "overgroup": overgroup,
+                "subgroup": [3, 1], # hardcore this for now
+                "setsize": setsize,
+                "numsets": numsets,
+                "dups": dups
+            }
+            output.append(record)
+    
+    outputfile.write("[")
+    for i, r in enumerate(output):
+        outputfile.write(json.dumps(r, sort_keys=True) + ("," if i != len(output) - 1 else "") + "\n\n")
+    outputfile.write("]")
+
     
 parser = argparse.ArgumentParser(description='Automate the running of conjure on lots of models')
 parser.add_argument('--allmodels', action='store_true')
 parser.add_argument('--onemodel')
 parser.add_argument('--cleanoutput', action='store_true')
+
 args = parser.parse_args()
 
 if args.allmodels:
