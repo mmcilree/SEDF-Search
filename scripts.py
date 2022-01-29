@@ -5,7 +5,7 @@ from os import listdir, system
 PARAM_PATH = "./gap/params"
 CONJURE_OUTPUT_PATH = "./conjure-output"
 JSON_FILE_OUTPUT = "./known_osedfs.json"
-ESSENCE_FILE = "essence/edfimage.essence"
+ESSENCE_FILE = "essence/edf.essence"
 
 
 def all_models():
@@ -69,10 +69,18 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument("--allmodels", action="store_true")
+parser.add_argument("--fromimage", action="store_true")
+parser.add_argument("--makeimage", action="store_true")
+
 parser.add_argument("--onemodel")
 parser.add_argument("--cleanoutput", action="store_true")
 
 args = parser.parse_args()
+
+if args.fromimage:
+    ESSENCE_FILE = "essence/edffromimage.essence"
+elif args.makeimage:
+    ESSENCE_FILE = "essence/edfimage.essence"
 
 if args.allmodels:
     all_models()
