@@ -13,7 +13,7 @@ def all_models():
     for f in files:
         if f.endswith(".param"):
             system(
-                "timeout 30m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=all --smart-filenames ".format(
+                "timeout 30m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
                     ESSENCE_FILE, PARAM_PATH, f
                 )
             )
