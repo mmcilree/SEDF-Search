@@ -32,8 +32,8 @@ given mulinvtable: matrix indexed by [int(1..n), int(1..n)] of int(1..n)
 given mulinvtuples: matrix indexed by [int(1..n*n), int(1..3)] of int(1..n)
 
 $ List of symmetries
-given symsize: int
-given syms: matrix indexed by [int(1..symsize),int(1..n)] of int(1..n)
+$ given symsize: int
+$ given syms: matrix indexed by [int(1..symsize),int(1..n)] of int(1..n)
 
 $ The EDF, expressed as a list of lists
 find edf: matrix indexed by [int(1..setnum), int(1..setsize)] of int(1..n)
@@ -59,17 +59,17 @@ allDiff(flatten(edf)),
 $ Use the symmetry breaking (you can ask what this means)
 $ Basically, we are saying that if we apply any symmetry to any set in the EDF,
 $ the result should not be lexicographically smaller than the smallest set in the EDF.
-forAll s : int(1..setnum).
-( forAll i : int(1..symsize). [boolrep[s, syms[i,j]] | j : int(1..n)] <=lex boolrep[1,..] ),
+$ forAll s : int(1..setnum).
+$ ( forAll i : int(1..symsize). [boolrep[s, syms[i,j]] | j : int(1..n)] <=lex boolrep[1,..] ),
 
 $ Order the lists in 'edf', as they should be sorted
-forAll i : int(1..setnum). forAll j : int(1..setsize-1). edf[i,j] < edf[i,j+1],
+$ forAll i : int(1..setnum). forAll j : int(1..setsize-1). edf[i,j] < edf[i,j+1],
 
 $ order the sets in the EDF by first value, to break symmetry on the outer list
-forAll i : int(1..setnum-1). edf[i,1] < edf[i+1,1],
+$ forAll i : int(1..setnum-1). edf[i,1] < edf[i+1,1],
 
 $ restrict to the allowed values
-forAll i : int(1..setnum). forAll j : int(1..setsize). allowedvalues[i, j, edf[i, j]] == true,
+forAll i : int(1..setnum). forAll j : int(1..setsize). allowedvalues[i, j, edf[i, j]] = true,
 
 $ Now set up the 'edfmap', this makes a variable 'edfmap[p1,p2,q1,q2]'
 $ which is equal to x*y^-1, where x is the p2th element of the p1st set
