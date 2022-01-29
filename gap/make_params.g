@@ -28,7 +28,7 @@ validLambdas := function(n, sedf)
 	return l;
 end;
 
-outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, numsets, lambda, sedf)
+outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, numsets, lambda, sedf, allowedVals)
 	local output;
 	output := OutputTextFile(filename, false );
 	SetPrintFormattingStatus(output, false);
@@ -36,6 +36,10 @@ outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, num
 
 	if s <> false then
 		PrintToFormatted(output, "letting s be {}\n", s);
+	fi;
+
+	if allowedVals <> false then
+		PrintToFormatted(output, "letting allowedvalues be {}\n", allowedVals);
 	fi;
 
 	PrintToFormatted(output, "letting inverses be {}\n", tables.inverses);
@@ -94,11 +98,11 @@ buildAllParamsForGroup := function(group, isSEDF)
 	
 	for o in options do
 		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, o.numsets, o.setsize, o.lambda);
-		outputEssenceFile(filename, g.elements, false, g.tables, g.syms, o.setsize, o.numsets, o.lambda, isSEDF);
+		outputEssenceFile(filename, g.elements, false, g.tables, g.syms, o.setsize, o.numsets, o.lambda, isSEDF, false);
 	od;
 end;
 
-buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF)
+buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF, fromImage)
 	local g, type, filename;
 	g := getGroupData(group);
 
@@ -109,8 +113,57 @@ buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF)
 	fi;
 
 	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, numSets, setSize, lambda);
-	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF);
+	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, false);
 end;
+
+getAllowedVals := function(group, image, oedf, hom)
+	local set, value, allowedVals, allowed, imEls, gEls, el, i, j, k;
+	gEls := OrderedElements(group);
+	imEls := OrderedElements(image);
+
+	allowedVals := [];
+
+	i := 1;
+	for set in oedf do
+		Add(allowedVals, []);
+		j := 1;
+		for value in set do
+			Add(allowedVals[i], []);
+			el := imEls[value];
+			allowed := PreImages(hom, el);
+			for k in [1..Size(group)] do;
+				if gEls[k] in allowed then
+					Add(allowedVals[i][j], true);
+				else	
+					Add(allowedVals[i][j], false);
+				fi;
+			od;
+			j := j +1;
+		od;
+		i := i +1;
+	od;
+
+	return allowedVals;
+end;
+
+buildParamsFromOEDF := function(group, image, hom, oedf, lambda, isSEDF)
+	local g, type, filename, numSets, setSize, allowedVals;
+	# hom := NaturalHomomorphismByNormalSubgroup(group, image);
+	numSets := Size(oedf);
+	setSize := Size(oedf[1]);
+
+	g := getGroupData(group);
+	allowedVals := getAllowedVals(group, image, oedf, hom);
+	if isSEDF then
+		type := "sedf";
+	else
+		type := "edf";
+	fi;
+
+	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, numSets, setSize, lambda);
+	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, allowedVals);
+end;
+
 
 buildAllParamsForImage := function(group, image, isSEDF)
 	local g, o, i, type, lambda, filename, options;
@@ -128,7 +181,7 @@ buildAllParamsForImage := function(group, image, isSEDF)
 	for o in options do
 		lambda := o.lambda*(g.size/i.size);
 		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, o.setsize, o.numsets, lambda);
-		outputEssenceFile(filename, i.elements, g.size, i.tables, false, o.setsize, o.numsets, lambda, isSEDF);
+		outputEssenceFile(filename, i.elements, g.size, i.tables, false, o.setsize, o.numsets, lambda, isSEDF, false);
 	od;
 end;
 
