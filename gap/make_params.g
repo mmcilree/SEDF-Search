@@ -28,14 +28,16 @@ validLambdas := function(n, sedf)
 	return l;
 end;
 
-
-
-outputEDFEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, numsets, lambda, sedf)
+outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, numsets, lambda, sedf)
 	local output;
-	output := OutputTextFile( filename, false );
+	output := OutputTextFile(filename, false );
 	SetPrintFormattingStatus(output, false);
 	PrintToFormatted(output, "letting n be {}\n", Length(ordgrp));
-	PrintToFormatted(output, "letting s be {}\n", s);
+
+	if s <> false then
+		PrintToFormatted(output, "letting s be {}\n", s);
+	fi;
+
 	PrintToFormatted(output, "letting inverses be {}\n", tables.inverses);
 	PrintToFormatted(output, "letting multable be {}\n", tables.multable);
 	PrintToFormatted(output, "letting mulinvtable be {}\n", tables.mulinvtable);
@@ -44,54 +46,92 @@ outputEDFEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, 
 	PrintToFormatted(output, "letting setsize be {}\n", setsize);
 	PrintToFormatted(output, "letting setnum be {}\n", numsets);
 	PrintToFormatted(output, "letting dups be {}\n", lambda);
-	# The whole 'List(l, x -> x)' gets rid of any range notation, which savilerow doesn't understand
-	# PrintToFormatted(output, "letting symsize be {}\n", Size(symlist));
-	# PrintToFormatted(output, "letting syms be {}\n", List(symlist, l -> List(l, x -> x)));
+	
+
+	if symlist <> false then
+		# The whole 'List(l, x -> x)' gets rid of any range notation, which savilerow doesn't understand
+		PrintToFormatted(output, "letting symsize be {}\n", Size(symlist));
+		PrintToFormatted(output, "letting syms be {}\n", List(symlist, l -> List(l, x -> x)));
+	fi;
+	
 	PrintToFormatted(output, "letting makeEDF be false\n", not sedf);
 	PrintToFormatted(output, "letting makeSEDF be true\n", sedf);
 	
 	CloseStream(output);
-	end;
+end;
 
+getGroupData := function(group)
+	local data, ordElms, name;
 
-build := function(groupsize, number, imagesize, imagenumber)
-	local makeSEDF, n, options, i, G, ordG, symlist, option, tables,
-	  numsets, setsize, lambda, name, table, type, filename;
-	makeSEDF :=  true;
-	n := groupsize;
-	i := number;
-	options := validLambdas(groupsize, true);
+	ordElms := OrderedElements(group);
+	name := StructureDescription(group);
+	RemoveCharacters(name," ");
+
+	data := rec(
+		name := name,
+		id := IdSmallGroup(group)[2],
+		elements := ordElms,
+		size := Order(group),
+		syms := CollectSyms(ordElms, 1000),
+		tables := BuildTables(ordElms)
+	);
+
+	return data;
+end;
+
+buildAllParamsForGroup := function(group, isSEDF)
+	local g, o, options, type, option, filename;
 	
-	if IsEmpty(options) then
-		Print("No options for this group size");
-		return;
+	g := getGroupData(group);
+
+	options := validLambdas(g.size, isSEDF);
+
+	if isSEDF then
+		type := "sedf";
+	else
+		type := "edf";
+	fi;
+	
+	for o in options do
+		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, o.numsets, o.setsize, o.lambda);
+		outputEssenceFile(filename, g.elements, false, g.tables, g.syms, o.setsize, o.numsets, o.lambda, isSEDF);
+	od;
+end;
+
+buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF)
+	local g, type, filename;
+	g := getGroupData(group);
+
+	if isSEDF then
+		type := "sedf";
+	else
+		type := "edf";
 	fi;
 
-	G := SmallGroup(imagesize, imagenumber);
-		
-	ordG := OrderedElements(G);
+	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, numSets, setSize, lambda);
+	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF);
+end;
 
-	symlist := CollectSyms(ordG, 1000);
-	
-	for option in options do
-			
-			numsets := option.numsets;
-			setsize := option.setsize;
-			lambda := option.lambda*(groupsize/imagesize);
+buildAllParamsForImage := function(group, image, isSEDF)
+	local g, o, i, type, lambda, filename, options;
+	g := getGroupData(group);
+	i := getGroupData(image);
 
-			name := StructureDescription(G);
+	if isSEDF then
+		type := "osedf";
+	else
+		type := "oedf";
+	fi;
 
-			tables := BuildTables(ordG);
+	options := validLambdas(g.size, isSEDF);
 
-			# Remove spaces from name, e.g. "C2 x C4" => "C2xC4"
-			RemoveCharacters(name," ");
-
-			if makeSEDF then
-				type := "sedf";
-			else
-				type := "edf";
-			fi;
-			filename := StringFormatted("groups/{}_{}_{}_{}_{}_{}.param", type, n, i, setsize, numsets, lambda);
-			outputEDFEssenceFile(filename, ordG, n, tables, symlist, setsize, numsets, lambda, makeSEDF);
+	for o in options do
+		lambda := o.lambda*(g.size/i.size);
+		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, o.setsize, o.numsets, lambda);
+		outputEssenceFile(filename, i.elements, g.size, i.tables, false, o.setsize, o.numsets, lambda, isSEDF);
 	od;
+end;
+
+bapfi := function(n, i1, i, i2)
+	buildAllParamsForImage(SmallGroup(n, i1), SmallGroup(i, i2), true);
 end;

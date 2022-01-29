@@ -12,8 +12,6 @@ given setnum: int(1..n)
 $ Occurrences of each value
 given dups : int(1..n)
 
-given allowedvalues: matrix indexed by [int(1..setnum), int(1..setsize), int(1..n)] of bool
-
 given makeEDF: bool
 given makeSEDF: bool
 
@@ -68,8 +66,6 @@ forAll i : int(1..setnum). forAll j : int(1..setsize-1). edf[i,j] < edf[i,j+1],
 $ order the sets in the EDF by first value, to break symmetry on the outer list
 forAll i : int(1..setnum-1). edf[i,1] < edf[i+1,1],
 
-$ restrict to the allowed values
-forAll i : int(1..setnum). forAll j : int(1..setsize). allowedvalues[i, j, edf[i, j]] == true,
 
 $ Now set up the 'edfmap', this makes a variable 'edfmap[p1,p2,q1,q2]'
 $ which is equal to x*y^-1, where x is the p2th element of the p1st set
@@ -80,6 +76,7 @@ forAll p1 : int(1..setnum). forAll q1 : int(1..setnum).
         table([edf[p1,p2],edf[q1,q2],edfmap[p1,p2,q1,q2]], mulinvtuples)
     )
 ),
+
 
 $ Now actually require we have an EDF!
 makeSEDF ->
@@ -96,5 +93,3 @@ makeEDF->
     | 
 p1 : int(1..setnum), p2 : int(1..setsize),q2 : int(1..setsize), q1 : int(1..setnum), p1 != q1], [i | i : int(1..n)], [toInt(i != 1)*dups | i : int(1..n)])
 )
-
-

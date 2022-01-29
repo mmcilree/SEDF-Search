@@ -2,23 +2,33 @@ import argparse
 import json
 from os import listdir, system
 
-PARAM_PATH = "./gap/groups"
+PARAM_PATH = "./gap/params"
 CONJURE_OUTPUT_PATH = "./conjure-output"
 JSON_FILE_OUTPUT = "./known_osedfs.json"
+ESSENCE_FILE = "essence/edfimage.essence"
+
 
 def all_models():
     files = listdir(PARAM_PATH)
     for f in files:
         if f.endswith(".param"):
-            system("timeout 30m conjure solve essence/edfimage.essence {0}/{1} --output-format=json --number-of-solutions=all --smart-filenames ".format(PARAM_PATH, f))
+            system(
+                "timeout 30m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=all --smart-filenames ".format(
+                    ESSENCE_FILE, PARAM_PATH, f
+                )
+            )
 
 def one_model(modelpath):
-    system("timeout 30m conjure solve essence/edfimage.essence {0} --output-format=json --number-of-solutions=all --smart-filenames ".format(modelpath))
+    system(
+        "timeout 30m conjure solve {0} {1} --output-format=json --number-of-solutions=all --smart-filenames ".format(
+            ESSENCE_FILE, modelpath
+        )
+    )
 
 def clean_output():
     """
-        Read all of the conjure json output files, extract the important bits 
-        and store in a single file
+    Read all of the conjure json output files, extract the important bits
+    and store in a single file
     """
     files = listdir(CONJURE_OUTPUT_PATH)
     outputfile = open(JSON_FILE_OUTPUT, "w+")
@@ -35,25 +45,32 @@ def clean_output():
             numsets = int(metadata[4])
             dups = int(metadata[5].split("-")[0])
             record = {
-                "osedf" : osedf,
+                "osedf": osedf,
                 "overgroup": overgroup,
-                "subgroup": [3, 1], # hardcore this for now
+                "subgroup": [3, 1],  # hardcore this for now
                 "setsize": setsize,
                 "numsets": numsets,
-                "dups": dups
+                "dups": dups,
             }
             output.append(record)
-    
+
     outputfile.write("[")
     for i, r in enumerate(output):
-        outputfile.write(json.dumps(r, sort_keys=True) + ("," if i != len(output) - 1 else "") + "\n\n")
+        outputfile.write(
+            json.dumps(r, sort_keys=True)
+            + ("," if i != len(output) - 1 else "")
+            + "\n\n"
+        )
     outputfile.write("]")
 
-    
-parser = argparse.ArgumentParser(description='Automate the running of conjure on lots of models')
-parser.add_argument('--allmodels', action='store_true')
-parser.add_argument('--onemodel')
-parser.add_argument('--cleanoutput', action='store_true')
+
+parser = argparse.ArgumentParser(
+    description="Automate the running of conjure on lots of models"
+)
+
+parser.add_argument("--allmodels", action="store_true")
+parser.add_argument("--onemodel")
+parser.add_argument("--cleanoutput", action="store_true")
 
 args = parser.parse_args()
 
@@ -64,6 +81,3 @@ elif args.onemodel is not None:
 
 if args.cleanoutput:
     clean_output()
-
-
-
