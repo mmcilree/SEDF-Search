@@ -2,6 +2,7 @@ conjure-output/
 .MINION*
 *.solution
 *.param
+.nfs*
 
 .vscode/
 
