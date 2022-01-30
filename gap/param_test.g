@@ -1,6 +1,7 @@
 Read("make_params.g");
 
 find_cyclic_25 := function()
+    local G, Ns, N, hom, H;
     G := SmallGroup(25, 2);
     Ns := NormalSubgroups(G);
     for N in Ns do
@@ -34,6 +35,10 @@ ff64cont := function()
     H := Image(hom, G);
     Print(StructureDescription(H));
     
-    osedf := [[1,2,3],[1,2,3],[1,2,4],[1,2,4],[1,3,4],[1,3,4],[2,3,4],[2,3,4]];
-    buildParamsFromOEDF(G, H, hom, osedf, 1, true);
+    # osedf := [[1,2,3],[1,2,3],[1,2,4],[1,2,4],[1,3,4],[1,3,4],[2,3,4],[2,3,4]]; #dups = 1
+    osedf := [[1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 1, 4, 4, 1, 1, 1, 1, 1, 1, 1], 
+    [1, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 1, 4, 4, 1, 2, 2, 2, 2, 2, 2]];
+    buildParamsFromOEDF(G, H, hom, osedf, 7, true);
 end;
+
+

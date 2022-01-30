@@ -7,13 +7,12 @@ CONJURE_OUTPUT_PATH = "./conjure-output"
 JSON_FILE_OUTPUT = "./known_osedfs.json"
 ESSENCE_FILE = "essence/edf.essence"
 
-
 def all_models():
     files = listdir(PARAM_PATH)
     for f in files:
         if f.endswith(".param"):
             system(
-                "timeout 30m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
+                "conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
                     ESSENCE_FILE, PARAM_PATH, f
                 )
             )
@@ -31,7 +30,7 @@ def clean_output():
     and store in a single file
     """
     files = listdir(CONJURE_OUTPUT_PATH)
-    outputfile = open(JSON_FILE_OUTPUT, "w+")
+    outputfile = open(JSON_FILE_OUTPUT, "a+")
     output = []
     for filepath in files:
         if filepath.endswith(".json"):
@@ -53,8 +52,12 @@ def clean_output():
                 "dups": dups,
             }
             output.append(record)
+    if len(outputfile.readlines()) == 0:
+        outputfile.write("[")
+    else:
+        outputfile.seek(-1, os.SEEK_END)
+        outputfile.truncate()
 
-    outputfile.write("[")
     for i, r in enumerate(output):
         outputfile.write(
             json.dumps(r, sort_keys=True)

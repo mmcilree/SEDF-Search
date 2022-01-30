@@ -28,6 +28,7 @@ validLambdas := function(n, sedf)
 	return l;
 end;
 
+# Print an Essence .param file: this has been adapated to allow for EDF images, and EDFs based on image. 
 outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, numsets, lambda, sedf, allowedVals)
 	local output;
 	output := OutputTextFile(filename, false );
@@ -64,6 +65,7 @@ outputEssenceFile := function(filename, ordgrp, s, tables, symlist, setsize, num
 	CloseStream(output);
 end;
 
+# Get some reusable information about the group.
 getGroupData := function(group)
 	local data, ordElms, name;
 
@@ -83,6 +85,7 @@ getGroupData := function(group)
 	return data;
 end;
 
+# Create all possible .param files for this particular group.
 buildAllParamsForGroup := function(group, isSEDF)
 	local g, o, options, type, option, filename;
 	
@@ -102,7 +105,8 @@ buildAllParamsForGroup := function(group, isSEDF)
 	od;
 end;
 
-buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF, fromImage)
+# Create a .param file for these particular values
+buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF)
 	local g, type, filename;
 	g := getGroupData(group);
 
@@ -116,11 +120,14 @@ buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF, fromI
 	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, false);
 end;
 
+# Convert an OEDF (possible image) into a list of allowed values for each position in the EDF
 getAllowedVals := function(group, image, oedf, hom)
 	local set, value, allowedVals, allowed, imEls, gEls, el, i, j, k;
 	gEls := OrderedElements(group);
 	imEls := OrderedElements(image);
 
+	# allowedValues[i][j][k] should be a boolean indicating whether the jth position in ith set
+	# can take the kth value in the ordered elements of the group.
 	allowedVals := [];
 
 	i := 1;
@@ -146,6 +153,7 @@ getAllowedVals := function(group, image, oedf, hom)
 	return allowedVals;
 end;
 
+# Build params constrained to being and EDF that maps to a particular possible image under a homomorphism.
 buildParamsFromOEDF := function(group, image, hom, oedf, lambda, isSEDF)
 	local g, type, filename, numSets, setSize, allowedVals;
 	# hom := NaturalHomomorphismByNormalSubgroup(group, image);
@@ -164,7 +172,8 @@ buildParamsFromOEDF := function(group, image, hom, oedf, lambda, isSEDF)
 	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, allowedVals);
 end;
 
-
+# Create all possible param files for a particular image group (under some homomorphism).
+# Note that the group 'image' should be isomorphic to the quotient G/N for some quotient group N.
 buildAllParamsForImage := function(group, image, isSEDF)
 	local g, o, i, type, lambda, filename, options;
 	g := getGroupData(group);
