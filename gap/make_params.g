@@ -4,6 +4,17 @@ G := "";
 
 Read("utils.g");
 
+typeAsString := function(isSEDF)
+	local type;
+	if isSEDF then
+		type := "sedf";
+	else
+		type := "edf";
+	fi;
+
+	return type;
+end;
+
 # Check if there is any valid Lambda value
 validLambdas := function(n, sedf)
 	local numsets, setsize, lambda, l;
@@ -90,15 +101,9 @@ buildAllParamsForGroup := function(group, isSEDF)
 	local g, o, options, type, option, filename;
 	
 	g := getGroupData(group);
-
+	type := typeAsString(isSEDF);
 	options := validLambdas(g.size, isSEDF);
 
-	if isSEDF then
-		type := "sedf";
-	else
-		type := "edf";
-	fi;
-	
 	for o in options do
 		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, o.numsets, o.setsize, o.lambda);
 		outputEssenceFile(filename, g.elements, false, g.tables, g.syms, o.setsize, o.numsets, o.lambda, isSEDF, false);
@@ -108,15 +113,11 @@ end;
 # Create a .param file for these particular values
 buildParamsWithValues := function(group, numSets, setSize, lambda, isSEDF)
 	local g, type, filename;
+
 	g := getGroupData(group);
-
-	if isSEDF then
-		type := "sedf";
-	else
-		type := "edf";
-	fi;
-
+	type := typeAsString(isSEDF);
 	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, numSets, setSize, lambda);
+
 	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, false);
 end;
 
@@ -162,11 +163,7 @@ buildParamsFromOEDF := function(group, image, hom, oedf, lambda, isSEDF)
 
 	g := getGroupData(group);
 	allowedVals := getAllowedVals(group, image, oedf, hom);
-	if isSEDF then
-		type := "sedf";
-	else
-		type := "edf";
-	fi;
+	type := typeAsString(isSEDF);
 
 	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, numSets, setSize, lambda);
 	outputEssenceFile(filename, g.elements, false, g.tables, g.syms, setSize, numSets, lambda, isSEDF, allowedVals);
@@ -178,20 +175,81 @@ buildAllParamsForImage := function(group, image, isSEDF)
 	local g, o, i, type, lambda, filename, options;
 	g := getGroupData(group);
 	i := getGroupData(image);
-
-	if isSEDF then
-		type := "osedf";
-	else
-		type := "oedf";
-	fi;
-
+	type := Concatenation("o", typeAsString(isSEDF));
 	options := validLambdas(g.size, isSEDF);
 
 	for o in options do
 		lambda := o.lambda*(g.size/i.size);
-		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, o.setsize, o.numsets, lambda);
+		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, o.numsets, o.setsize, lambda);
 		outputEssenceFile(filename, i.elements, g.size, i.tables, false, o.setsize, o.numsets, lambda, isSEDF, false);
 	od;
+end;
+
+buildParamsForImageWithValues := function(group, image, numsets, setsize, lambda, isSEDF)
+	local g, o, i, type, filename, options;
+	g := getGroupData(group);
+	i := getGroupData(image);
+	type := Concatenation("o", typeAsString(isSEDF));
+
+	for o in options do
+		lambda := lambda*(g.size/i.size);
+		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, numsets, setsize, lambda);
+		outputEssenceFile(filename, i.elements, g.size, i.tables, false, setsize, numsets, lambda, isSEDF, false);
+	od;
+end;
+
+buildParamsForImageFromOEDF := function(overgroup, group, image, hom, oedf, lambda, isSEDF)
+	local g, og, type, filename, numSets, setSize, allowedVals;
+	# hom := NaturalHomomorphismByNormalSubgroup(group, image);
+	numSets := Size(oedf);
+	setSize := Size(oedf[1]);
+
+	og := getGroupData(overgroup);
+	g := getGroupData(group);
+	allowedVals := getAllowedVals(group, image, oedf, hom);
+	type := Concatenation("o", typeAsString(isSEDF));
+
+	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, og.size, og.id, g.size, g.id, numSets, setSize, lambda);
+	outputEssenceFile(filename, g.elements, og.size, g.tables, false, setSize, numSets, lambda, isSEDF, allowedVals);
+end;
+
+getLargestImage := function(group)
+	local Ns, smallestN, hom;
+	Ns := ChiefSeries(group);
+	smallestN := Ns[Size(Ns) - 1];
+	hom := NaturalHomomorphismByNormalSubgroup(group, smallestN);
+	return Image(hom);
+end;
+
+getNthImage := function(group, n)
+	local H, i;
+	H := getLargestImage(group);
+	for i in [1..n-1] do
+		H := getLargestImage(H);
+	od;
+
+	return H;
+end;
+
+buildAllParamsForLargestImage := function(group, isSEDF)
+	local image;
+	image := getLargestImage(group);
+	buildAllParamsForImage(group, image, isSEDF);
+end;
+
+buildParamsForLargestImageWithValues := function(group, numsets, setsize, lambda, isSEDF)
+	local image;
+	image := getLargestImage(group);
+	buildParamsForImageWithValues(group, image, numsets, setsize, lambda, isSEDF);
+end;
+
+bapfcs := function(group, subgroupno)
+	local Ns, N, hom, H;
+	Ns := ChiefSeries(group);
+	N := Ns[subgroupno];
+	hom := NaturalHomomorphismByNormalSubgroup(group, N);
+	H := Image(hom, group);
+	buildAllParamsForImage(group, H, true);
 end;
 
 bapfi := function(n, i1, i, i2)

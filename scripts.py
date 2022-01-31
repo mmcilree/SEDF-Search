@@ -5,32 +5,32 @@ from os import listdir, system
 PARAM_PATH = "./gap/params"
 CONJURE_OUTPUT_PATH = "./conjure-output"
 JSON_FILE_OUTPUT = "./known_osedfs.json"
-ESSENCE_FILE = "essence/edf.essence"
+ESSENCE_FILE = "essence/edfimagefromimage.essence"
 
 def all_models():
     files = listdir(PARAM_PATH)
     for f in files:
         if f.endswith(".param"):
             system(
-                "conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
+                "timeout 1m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
                     ESSENCE_FILE, PARAM_PATH, f
                 )
             )
 
 def one_model(modelpath):
     system(
-        "timeout 30m conjure solve {0} {1} --output-format=json --number-of-solutions=all --smart-filenames ".format(
+        "conjure solve {0} {1} --output-format=json --number-of-solutions=all --smart-filenames ".format(
             ESSENCE_FILE, modelpath
         )
     )
 
-def clean_output():
+def clean_output(path):
     """
     Read all of the conjure json output files, extract the important bits
     and store in a single file
     """
     files = listdir(CONJURE_OUTPUT_PATH)
-    outputfile = open(JSON_FILE_OUTPUT, "a+")
+    outputfile = open(path, "w+")
     output = []
     for filepath in files:
         if filepath.endswith(".json"):
@@ -40,13 +40,15 @@ def clean_output():
             f.close()
             osedf = [[x for x in s.values()] for s in data["edf"].values()]
             overgroup = [int(metadata[1]), int(metadata[2])]
-            setsize = int(metadata[3])
-            numsets = int(metadata[4])
-            dups = int(metadata[5].split("-")[0])
+            subgroup = [int(metadata[3]), int(metadata[4])]
+            numsets = int(metadata[5])
+            setsize = int(metadata[6])
+            
+            dups = int(metadata[7].split("-")[0])
             record = {
                 "osedf": osedf,
                 "overgroup": overgroup,
-                "subgroup": [3, 1],  # hardcore this for now
+                "subgroup": subgroup,
                 "setsize": setsize,
                 "numsets": numsets,
                 "dups": dups,
@@ -76,7 +78,7 @@ parser.add_argument("--fromimage", action="store_true")
 parser.add_argument("--makeimage", action="store_true")
 
 parser.add_argument("--onemodel")
-parser.add_argument("--cleanoutput", action="store_true")
+parser.add_argument("--cleanoutput")
 
 args = parser.parse_args()
 
@@ -90,5 +92,5 @@ if args.allmodels:
 elif args.onemodel is not None:
     one_model(args.onemodel)
 
-if args.cleanoutput:
-    clean_output()
+if args.cleanoutput is not None:
+    clean_output(args.cleanoutput)

@@ -6,13 +6,13 @@ given n: int
 $ Size of the group this group is a subgroup of
 given s : int
 
-given allowedvalues: matrix indexed by [int(1..setnum), int(1..setsize), int(1..n)] of bool
-
 $ Size of each set
 given setsize: int(1..s)
 
 $ Number of sets
 given setnum: int(1..s)
+
+given allowedvalues: matrix indexed by [int(1..setnum), int(1..setsize), int(1..n)] of bool
 
 $ Occurrences of each value
 given dups : int(1..s*s/n)

@@ -26,10 +26,10 @@ findd50byseries := function()
     local G, Ns, hom, H;
     G := SmallGroup(50, 1);
     Ns := ChiefSeries(G);
-    hom := NaturalHomomorphismByNormalSubgroup(G, Ns[2]);
+    hom := NaturalHomomorphismByNormalSubgroup(Ns[3], Ns[[2]]);
     H := Image(hom, G);
     
-    buildAllParamsForImage(G, H, true);
+    buildAllParamsFromOEDF(G, H, hom,  true);
 end;
 
 ff64 := function()
