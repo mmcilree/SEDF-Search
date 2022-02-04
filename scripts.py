@@ -12,14 +12,14 @@ def all_models():
     for f in files:
         if f.endswith(".param"):
             system(
-                "timeout 1m conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
+                "conjure solve {0} {1}/{2} --output-format=json --number-of-solutions=all --smart-filenames ".format(
                     ESSENCE_FILE, PARAM_PATH, f
                 )
             )
 
 def one_model(modelpath):
     system(
-        "conjure solve {0} {1} --output-format=json --number-of-solutions=all --smart-filenames ".format(
+        "conjure solve {0} {1} --output-format=json --number-of-solutions=1 --smart-filenames ".format(
             ESSENCE_FILE, modelpath
         )
     )
@@ -76,6 +76,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--allmodels", action="store_true")
 parser.add_argument("--fromimage", action="store_true")
 parser.add_argument("--makeimage", action="store_true")
+parser.add_argument("--rwedf", action="store_true")
 
 parser.add_argument("--onemodel")
 parser.add_argument("--cleanoutput")
@@ -86,6 +87,8 @@ if args.fromimage:
     ESSENCE_FILE = "essence/edffromimage.essence"
 elif args.makeimage:
     ESSENCE_FILE = "essence/edfimage.essence"
+elif args.rwedf:
+    ESSENCE_FILE = "essence/wedf.essence"
 
 if args.allmodels:
     all_models()

@@ -191,11 +191,10 @@ buildParamsForImageWithValues := function(group, image, numsets, setsize, lambda
 	i := getGroupData(image);
 	type := Concatenation("o", typeAsString(isSEDF));
 
-	for o in options do
-		lambda := lambda*(g.size/i.size);
-		filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, numsets, setsize, lambda);
-		outputEssenceFile(filename, i.elements, g.size, i.tables, false, setsize, numsets, lambda, isSEDF, false);
-	od;
+	lambda := lambda*(g.size/i.size);
+	filename := StringFormatted("params/{}_{}_{}_{}_{}_{}_{}_{}.param", type, g.size, g.id, i.size, i.id, numsets, setsize, lambda);
+	outputEssenceFile(filename, i.elements, g.size, i.tables, false, setsize, numsets, lambda, isSEDF, false);
+
 end;
 
 buildParamsForImageFromOEDF := function(overgroup, group, image, hom, oedf, lambda, isSEDF)

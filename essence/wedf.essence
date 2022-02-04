@@ -13,13 +13,7 @@ $ Size of largest set
 given maxsetsize: int(1..n)
 
 $ Occurrences of each value
-given lambda : int(1..n)
-
-given makeEDF: bool
-given makeSEDF: bool
-
-where (makeEDF \/ makeSEDF)
-where !(makeEDF /\ makeSEDF)
+given dups : int(1..setnum*n*maxsetsize*maxsetsize)
 
 $ Inverse of group
 given inverses: matrix indexed by [int(1..n)] of int(1..n)
@@ -32,50 +26,62 @@ $ x*y^-1, as table and tuples
 given mulinvtable: matrix indexed by [int(1..n), int(1..n)] of int(1..n)
 given mulinvtuples: matrix indexed by [int(1..n*n), int(1..3)] of int(1..n)
 
+given weights: matrix indexed by [int(1..setnum)] of int
+
 $ The EDF, expressed as a list of lists
-find edf: matrix indexed by [int(1..setnum), int(1..maxsetsize)] of int(1..n)
-
-
-find weights: matrix indexed by [int(1..setsize), int(1..2)] of int
+find edf: matrix indexed by [int(1..setnum), int(1..maxsetsize)] of int(0..n)
 
 $ Extra variables, to represent the values of x*y^-1, for every pairing
-find edfmap: matrix indexed by [int(1..setnum), int(1..maxsetsize), int(1..setnum), int(1..maxsetsize)] of int(1..n)
+find edfmap: matrix indexed by [int(1..setnum), int(1..maxsetsize), int(1..setnum), int(1..maxsetsize)] of int(0..n)
 
 $ N_i(delta) for each value d
-find weightcount: matrix indexed by [int(1..setnum), int(1..n)] of int
+find weightcount: matrix indexed by [int(1..setnum), int(1..n)] of int(0..dups)
 
 such that
 
 $ Set the stub values so the WEDFs can be different sizes
-forAll i : int(1..setnum). forAll j : int((setsizes[i]+1)..maxsetsize). edf[i][j] = 0,
+forAll i : int(1..setnum). forAll j : int((setsizes[i]+1)..maxsetsize). edf[i,j] = 0,
+
+$ Set the stub values so the WEDFs can be different sizes
+forAll i : int(1..setnum). forAll j : int(1..(setsizes[i])). edf[i,j] != 0,
 
 $ No value is repreated in any set of the EDF (except the 0 stub values for sets of different size)
-allDiff([x | x <- flatten(edf) /\ x != 0]),
+allDiff([x | x <- flatten(edf), x != 0]),
 
 $ Now set up the 'edfmap', this makes a variable 'edfmap[p1,p2,q1,q2]'
 $ which is equal to x*y^-1, where x is the p2th element of the p1st set
 $ and y is the q2th element of the q1th set
 forAll p1 : int(1..setnum). forAll q1 : int(1..setnum).
 (
-    (    forAll p2 : int(1..maxsetsize). forAll q2 : int(1..maxsetsize).
+    (forAll p2 : int(1..(setsizes[p1])). forAll q2 : int(1..(setsizes[q1])).
         table([edf[p1,p2],edf[q1,q2],edfmap[p1,p2,q1,q2]], mulinvtuples)
+    )
+),
+
+$ Set the corresponding stub values in the edfmap
+forAll p1 : int(1..setnum). forAll q1 : int(1..setnum).
+(
+    (forAll p2 : int((setsizes[p1]+1)..maxsetsize). forAll q2 : int((setsizes[q1])..maxsetsize).
+        edfmap[p1,p2,q1,q2] = 0
     )
 ),
 
 $ Set up the weightcount
 forAll p1 : int(1..setnum). forAll v : int(1..n). 
-    weightcount[p1,v] = weight[p1, 1] / weight[p1, 2] * size(edfmap[p1,p2,q1,q2] 
-        | p2 : int(1..maxsetsize), q2 : int(1..setsize), q1 : int(1..maxsetsize), 
-          p1 != q1, edf[p1, p2] != 0, edf[q1, q2] != 0, p1=v]),
+( 
+    weightcount[p1,v] = sum
+    (
+        [
+            toInt(x) | 
+            p2 : int(1..maxsetsize), q1 : int(1..setnum), q2 : int(1..maxsetsize), 
+            q1 != p1, letting x be (edfmap[p1,p2,q1,q2] = v)
+        ]
+    )
+),
 
-
+$ Require uniformity
 forAll v : int(1..n).
-    sum([weightcount])
-$ gcc(
-$     [edfmap[p1,p2,q1,q2] 
-$         | p1 : int(1..setnum), p2 : int(1..maxsetsize), q2 : int(1..setsize), q1 : int(1..maxsetsize), 
-$             p1 != q1, edf[p1, p2] != 0, edf[q1, q2] != 0], $ignore the 0 values
-
-$     [i | i : int(1..n)], [toInt(i != 1)*dups | i : int(1..n)]
-$ )
+(
+    sum([weights[p1]*weightcount[p1, v] | p1 : int(1..setnum)]) = dups
+)
 
