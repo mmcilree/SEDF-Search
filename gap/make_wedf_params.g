@@ -68,9 +68,18 @@ buildAllRWEDFParams := function(G)
         # Print("weights = ", weights);
 		sizesstr := String(o.setsizes);
 		RemoveCharacters(sizesstr, " ");
-        filename := StringFormatted("params/rwedf_{}_{}_{}_{}_{}.param", g.size, g.id, o.numsets, sizesstr, lambda);
+        filename := StringFormatted("allrwedfs/rwedf_{}_{}_{}_{}_{}.param", g.size, g.id, o.numsets, sizesstr, lambda);
         # Print(filename, "\n");
         outputEssenceFile(filename, g.elements, g.tables, o.setsizes, o.numsets, lambda, weights);
     od;
 end;
 
+buildAllRWEDFParamsForAllGroups := function(n)
+	local i, j, G;
+	for i in [2..n] do
+		for j in [1..NumberSmallGroups(i)] do
+			G := SmallGroup(i, j);
+			buildAllRWEDFParams(G);
+		od;
+	od;
+end;
